@@ -171,7 +171,6 @@ yet been run on hardware. If you try it, please open an issue with your TV model
 - Weather: [Open-Meteo](https://open-meteo.com) (CC BY 4.0).
 - Quotes checked against [quran.com](https://quran.com) (Sahih International) and
   [sunnah.com](https://sunnah.com).
-- Built with [Claude Code](https://claude.com/product/claude-code).
 
 Full licence texts: [`NOTICE.md`](NOTICE.md).
 
