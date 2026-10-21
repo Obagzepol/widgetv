@@ -7,7 +7,8 @@ lapis-and-gold look). Both MIT.*
 **Before you paste it:**
 
 - It works on **Android TV and Google TV** sets (Sony, TCL, Xiaomi, Hisense, Philips, Chromecast with
-  Google TV and most others). Not on Samsung (Tizen), LG (webOS) or Fire TV.
+  Google TV and most others) running **Android 9 or newer**. Not on Samsung (Tizen), LG (webOS) or
+  Fire TV.
 - Clone this repo and open Claude Code **inside it**, on a computer on the same Wi-Fi as the TV.
 - On the TV: Settings > System > About, press OK on **Build** seven times. Back in Settings > System >
   Developer options, turn on **USB debugging** and, if listed, **Network debugging** (also called
@@ -139,6 +140,8 @@ Write my answers to `state/choices.md` as you go, so a later session (or a facto
   - Never disable the `FallbackHome` activities.
   - Done means `dumpsys activity activities | grep mFocusedApp` names our package after pressing HOME.
     Not "set-home-activity said Success".
+- On Android 9–10 the Wi-Fi button needs **Location** turned on (Settings > Location, or the TV's
+  privacy settings) to show the network name; otherwise it just shows "Wi-Fi". Tell me if that applies.
 - After taking over HOME, ask me to press the remote's dedicated buttons (Input, app buttons, Settings)
   and tell you which ones no longer work, and note them in `state/choices.md`.
 

@@ -137,10 +137,14 @@ again), and close ADB. Details in [`docs/UPDATES.md`](docs/UPDATES.md). Keep aut
 
 ## Tested on
 
-Sony BRAVIA (VU31 platform), Android 14 Google TV, 2 GB RAM. Notes and the full disable list:
-[`examples/sony-bravia-vu31.md`](examples/sony-bravia-vu31.md). It should work on any Android TV or Google
-TV running Android 14 or newer (the launcher's `minSdk` is 34). Tried it on another TV? An
-`examples/<model>.md` pull request is very welcome.
+Tested on a Sony BRAVIA (VU31 platform), Android 14 Google TV, 2 GB RAM. Notes and the full disable
+list: [`examples/sony-bravia-vu31.md`](examples/sony-bravia-vu31.md).
+
+It should work on Android TV / Google TV 9 and newer (the launcher's `minSdk` is 28); older versions
+are untested. Reports and `examples/<model>.md` pull requests are welcome.
+
+The screenshots come from the original build on that TV; this generalised build compiles but has not
+yet been run on hardware. If you try it, please open an issue with your TV model.
 
 ## Repo map
 

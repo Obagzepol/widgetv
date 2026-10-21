@@ -1,5 +1,6 @@
 package tv.widgetv.home;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
@@ -8,6 +9,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
+import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Typeface;
@@ -18,6 +20,7 @@ import android.net.NetworkCapabilities;
 import android.net.Uri;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -41,6 +44,7 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import androidx.annotation.RequiresApi;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -164,7 +168,7 @@ public class MainActivity extends Activity {
         applyClockFont();
         applyTextSize();
 
-        Rect window = getWindowManager().getCurrentWindowMetrics().getBounds();
+        Rect window = windowBounds();
         firstScreenH = window.height();
         findViewById(R.id.first_screen).getLayoutParams().height = firstScreenH;
         // Dock band and grid share the same 4 columns: width minus 2 x (40 margin + 16 band padding).
@@ -198,8 +202,8 @@ public class MainActivity extends Activity {
         pkgFilter.addAction(Intent.ACTION_PACKAGE_CHANGED);
         pkgFilter.addAction(Intent.ACTION_PACKAGE_REPLACED);
         pkgFilter.addDataScheme("package");
-        registerReceiver(packageReceiver, pkgFilter, RECEIVER_NOT_EXPORTED);
-        if (BuildConfig.DEBUG) registerReceiver(debugReceiver, new IntentFilter(debugAction()), RECEIVER_EXPORTED);
+        register(packageReceiver, pkgFilter, false);
+        if (BuildConfig.DEBUG) register(debugReceiver, new IntentFilter(debugAction()), true);
 
         getSystemService(ConnectivityManager.class).registerDefaultNetworkCallback(networkCallback, main);
     }
@@ -219,7 +223,7 @@ public class MainActivity extends Activity {
         IntentFilter timeFilter = new IntentFilter(Intent.ACTION_TIME_TICK);
         timeFilter.addAction(Intent.ACTION_TIME_CHANGED);
         timeFilter.addAction(Intent.ACTION_TIMEZONE_CHANGED);
-        registerReceiver(timeReceiver, timeFilter, RECEIVER_NOT_EXPORTED);
+        register(timeReceiver, timeFilter, false);
         updateClock(); // also the weather stale check
         loadApps(false);
     }
@@ -923,7 +927,9 @@ public class MainActivity extends Activity {
         d.setBounds(0, 0, size, size);
         int s = sb.length();
         sb.append("￼");
-        sb.setSpan(new ImageSpan(d, DynamicDrawableSpan.ALIGN_CENTER), s, sb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        // ALIGN_CENTER is API 29; Android 9 sits the icon on the line's bottom instead.
+        int align = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ? DynamicDrawableSpan.ALIGN_CENTER : DynamicDrawableSpan.ALIGN_BOTTOM;
+        sb.setSpan(new ImageSpan(d, align), s, sb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
     }
 
     private String timesLog() {
@@ -999,31 +1005,73 @@ public class MainActivity extends Activity {
 
     // ---------------------------------------------------------------- network pill
 
-    private final ConnectivityManager.NetworkCallback networkCallback =
-            new ConnectivityManager.NetworkCallback(ConnectivityManager.NetworkCallback.FLAG_INCLUDE_LOCATION_INFO) {
-                @Override
-                public void onCapabilitiesChanged(Network network, NetworkCapabilities caps) {
-                    ssid.setText(networkLabel(caps));
-                }
+    // Android 12+ only hands the SSID to callbacks that ask for location info; older versions read it from WifiManager.
+    private final ConnectivityManager.NetworkCallback networkCallback = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+            ? new NetworkWatcher(ConnectivityManager.NetworkCallback.FLAG_INCLUDE_LOCATION_INFO)
+            : new NetworkWatcher();
 
-                @Override
-                public void onLost(Network network) {
-                    ssid.setText(R.string.offline);
-                }
-            };
+    private final class NetworkWatcher extends ConnectivityManager.NetworkCallback {
+        NetworkWatcher() {
+            super();
+        }
 
-    /** SSID needs ACCESS_FINE_LOCATION (granted over adb); otherwise plain "Wi-Fi". */
+        @RequiresApi(Build.VERSION_CODES.S)
+        NetworkWatcher(int flags) {
+            super(flags);
+        }
+
+        @Override
+        public void onCapabilitiesChanged(Network network, NetworkCapabilities caps) {
+            ssid.setText(networkLabel(caps));
+        }
+
+        @Override
+        public void onLost(Network network) {
+            ssid.setText(R.string.offline);
+        }
+    }
+
+    /**
+     * SSID needs ACCESS_FINE_LOCATION (granted over adb), and on Android 9-10 Location turned on too;
+     * otherwise plain "Wi-Fi".
+     */
+    @SuppressWarnings("deprecation") // WifiManager.getConnectionInfo: the only SSID source before Android 12
     private String networkLabel(NetworkCapabilities caps) {
         if (caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) return getString(R.string.ethernet);
         if (!caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) return getString(R.string.wifi);
-        String ssid = caps.getTransportInfo() instanceof WifiInfo
-                ? ((WifiInfo) caps.getTransportInfo()).getSSID() : null;
+        WifiInfo info;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            info = caps.getTransportInfo() instanceof WifiInfo ? (WifiInfo) caps.getTransportInfo() : null;
+        } else {
+            WifiManager wifi = getApplicationContext().getSystemService(WifiManager.class);
+            info = wifi == null ? null : wifi.getConnectionInfo();
+        }
+        String ssid = info == null ? null : info.getSSID();
         if (ssid == null || ssid.equals(WifiManager.UNKNOWN_SSID)) return getString(R.string.wifi);
         ssid = ssid.replaceAll("^\"|\"$", "");
         return ssid.isEmpty() ? getString(R.string.wifi) : ssid;
     }
 
     // ---------------------------------------------------------------- utils
+
+    /** RECEIVER_EXPORTED / RECEIVER_NOT_EXPORTED exist from Android 13; older versions take no flag. */
+    @SuppressLint("UnspecifiedRegisterReceiverFlag") // the flagless call only runs below Android 13
+    private void register(BroadcastReceiver receiver, IntentFilter filter, boolean exported) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(receiver, filter, exported ? RECEIVER_EXPORTED : RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(receiver, filter);
+        }
+    }
+
+    /** The window's size: WindowMetrics from Android 11, the display's real size before (home is full screen). */
+    @SuppressWarnings("deprecation") // Display.getRealSize: the pre-Android 11 equivalent
+    private Rect windowBounds() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) return getWindowManager().getCurrentWindowMetrics().getBounds();
+        Point size = new Point();
+        getWindowManager().getDefaultDisplay().getRealSize(size);
+        return new Rect(0, 0, size.x, size.y);
+    }
 
     private int dp(float v) {
         return Math.round(v * getResources().getDisplayMetrics().density);
