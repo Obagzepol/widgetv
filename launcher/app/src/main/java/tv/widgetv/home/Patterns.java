@@ -1,4 +1,4 @@
-package tv.horizon.home;
+package tv.widgetv.home;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;

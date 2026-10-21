@@ -1,4 +1,4 @@
-package tv.horizon.home;
+package tv.widgetv.home;
 
 import android.app.Activity;
 import android.content.ActivityNotFoundException;

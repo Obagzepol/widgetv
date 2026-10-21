@@ -1,4 +1,4 @@
-package tv.horizon.home;
+package tv.widgetv.home;
 
 import android.view.Gravity;
 import android.view.LayoutInflater;

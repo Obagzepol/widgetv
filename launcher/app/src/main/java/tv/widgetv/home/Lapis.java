@@ -1,4 +1,4 @@
-package tv.horizon.home;
+package tv.widgetv.home;
 
 /** Design tokens (values from Afnon's Tokens.java). */
 final class Lapis {

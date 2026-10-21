@@ -10,7 +10,7 @@
 TOOLS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$TOOLS/.." && pwd)"
 STATE="$ROOT/state"
-PKG=tv.horizon.home
+PKG=tv.widgetv.home
 HOME_ACTIVITY="$PKG/.MainActivity"
 
 # Git Bash on Windows rewrites arguments that look like paths (/data/local/tmp -> C:/Program Files/Git/...).

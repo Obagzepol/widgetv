@@ -1,4 +1,4 @@
-# Horizon
+# WidgeTV
 
 **A calm, widget-first home screen for Android TV: a sky that moves with the day, glanceable clocks,
 weather and a daily thought, with prayer times built in.**

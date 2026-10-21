@@ -1,4 +1,4 @@
-package tv.horizon.home;
+package tv.widgetv.home;
 
 import android.icu.util.IslamicCalendar;
 import android.util.Log;

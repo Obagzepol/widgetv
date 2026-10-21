@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace 'tv.horizon.home'
+    namespace 'tv.widgetv.home'
     compileSdk 34
 
     defaultConfig {
-        applicationId 'tv.horizon.home'
+        applicationId 'tv.widgetv.home'
         minSdk 34
         targetSdk 34
         versionCode 1
